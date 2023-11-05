@@ -29,6 +29,7 @@
             android:name=".GPSService"
             android:enabled="true"
             android:exported="false" />
+        <receiver android:name=".GeofenceBroadcastReceiver"/>
     </application>
 
 </manifest>
