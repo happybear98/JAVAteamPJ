@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">My Application</string>
     <string name="button">GPS start</string>
+    <string name="channel_name">GPS 알림</string>
+    <string name="channel_description">GPS 알림입니다.</string>
 </resources>
