@@ -29,7 +29,12 @@
             android:name=".GPSService"
             android:enabled="true"
             android:exported="false" />
-        <receiver android:name=".GeofenceBroadcastReceiver"/>
+        <receiver android:name=".GeofenceBroadcastReceiver"
+                  android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.myapplication.ACTION_GEOFENCE_EVENT"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
