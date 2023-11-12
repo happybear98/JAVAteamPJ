@@ -16,7 +16,11 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
-
+        Log.i("GeofenceReceiver", "Intent received: " + intent);
+        if (geofencingEvent == null) {
+            Log.e("GeofenceErr", "GeofencingEvent is null");
+            return;
+        }
         if (geofencingEvent.hasError()) {
             String errorMessage = GeofenceStatusCodes.getStatusCodeString(geofencingEvent.getErrorCode());
             Log.e("GeofenceErr", errorMessage);
@@ -30,7 +34,6 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
             String transitionMsg;
-
             switch (geofenceTransition) {
                 case Geofence.GEOFENCE_TRANSITION_ENTER:
                     transitionMsg = "Enter";
@@ -44,10 +47,10 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             }
 
             for (Geofence geofence : triggeringGeofences) {
-                Log.i("geofence", geofence.getRequestId() + " - " + transitionMsg);
+                Log.i("Geofence", geofence.getRequestId() + " - " + transitionMsg);
             }
         } else {
-            Log.e("geofence", "Unknown");
+            Log.e("Geofence", "Unknown");
         }
     }
 }
