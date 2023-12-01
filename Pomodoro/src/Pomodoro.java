@@ -1,72 +1,218 @@
-import java.util.Timer;
-import java.util.TimerTask;
+package com.example.pomodoro;
 
-public class Pomodoro {
-    private Timer timer;
-    private int workTime; // 작업 시간 (분)
-    private int breakTime; // 휴식 시간 (분)
-    private boolean isWorking; // 현재 작업 중인지 여부
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
 
-    public Pomodoro(int workTime, int breakTime) {
-        this.workTime = workTime;
-        this.breakTime = breakTime;
-        this.isWorking = true; // 시작할 때 작업 중으로 초기화
-    }
+public class Pomodoro extends AppCompatActivity {
+    private ProgressBar workProgressBar;
+    private Button startPauseButton;
+    private Button resetButton;
+    private EditText workTimeEditText;
+    private EditText breakTimeEditText;
+    private TextView timerTextView;
+    private TextView statusTextView;
 
-    public void startTimer() {
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            int remainingTime = isWorking ? workTime * 60 : breakTime * 60; // 초로 변환
-            int remMinut = 0;
-            int Times = 59;
+    private CountDownTimer workTimer;
+    private CountDownTimer breakTimer;
 
+    private boolean isWorkTimerRunning = false;
+    private boolean isBreakTimerRunning = false;
+    private boolean isPaused = false;
+
+    private long workTimeInMillis;
+    private long breakTimeInMillis;
+    private long currentTimeInMillis;
+    private long savedTimeInMillis = 0;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_pomodoro_timer);
+
+        workProgressBar = findViewById(R.id.workProgressBar);
+        startPauseButton = findViewById(R.id.startPauseButton);
+        resetButton = findViewById(R.id.resetButton);
+        workTimeEditText = findViewById(R.id.workTimeEditText);
+        breakTimeEditText = findViewById(R.id.breakTimeEditText);
+        timerTextView = findViewById(R.id.timerTextView);
+        statusTextView = findViewById(R.id.statusTextView);
+
+        startPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                if ((remainingTime > 0) && (remMinut >= 0)) {
-                    remMinut = remainingTime / 60;
-                    Times = remainingTime % 60;
-                    if(isWorking) {
-                        // 남은 시간을 초로 변환하여 표시
-                        if(Times == 0) {
-                            System.out.println("Working Time: " + remMinut + " : 00");
-                            remainingTime--;
-                        } else {
-                            System.out.println("Working Time: " + remMinut + " : " + Times);
-                            remainingTime--;
-                        }
-                    } else {
-                        if(Times == 0) {
-                            System.out.println("breaking Time: " + remMinut + " : 00");
-                            remainingTime--;
-                        } else {
-                            System.out.println("breaking Time: " + remMinut + " : " + Times);
-                            remainingTime--;
-                        }
-                    }
+            public void onClick(View v) {
+                if (!isWorkTimerRunning && !isBreakTimerRunning) {
+                    startWorkTimer();
                 } else {
-                    // 작업 또는 휴식 시간 종료
-                    if (isWorking) {
-                        System.out.println("Work Time is over. Take a break!");
+                    if (isPaused) {
+                        resumeTimer();
                     } else {
-                        System.out.println("Break Time is over. Back to work!");
+                        pauseTimer();
                     }
-
-                    isWorking = !isWorking; // 상태 변경 (작업 <-> 휴식)
-                    remainingTime = isWorking ? workTime * 60 : breakTime * 60; // 다음 시간 설정
                 }
             }
-        }, 0, 1000); // 1초마다 실행
+        });
+
+        resetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetTimer();
+            }
+        });
     }
 
-    public void stopTimer() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
+    private void startWorkTimer() {
+        String workTimeStr = workTimeEditText.getText().toString();
+        if (!workTimeStr.isEmpty()) {
+            workTimeInMillis = Long.parseLong(workTimeStr) * 60 * 1000;
+            currentTimeInMillis = workTimeInMillis;
+
+            workTimer = new CountDownTimer(currentTimeInMillis, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    currentTimeInMillis = millisUntilFinished;
+                    updateTimerText();
+                    updateProgressBar(workTimeInMillis, currentTimeInMillis);
+                }
+
+                @Override
+                public void onFinish() {
+                    startBreakTimer();
+                }
+            };
+
+            workTimer.start();
+            isWorkTimerRunning = true;
+            isPaused = false;
+            startPauseButton.setText("Pause");
+            resetButton.setEnabled(false);
+            statusTextView.setText("Working");
         }
     }
 
-    public static void main(String[] args) {
-        Pomodoro pomodoro = new Pomodoro(1, 1); // 25분 작업, 5분 휴식
-        pomodoro.startTimer();
+    private void startBreakTimer() {
+        String breakTimeStr = breakTimeEditText.getText().toString();
+        if (!breakTimeStr.isEmpty()) {
+            breakTimeInMillis = Long.parseLong(breakTimeStr) * 60 * 1000;
+            currentTimeInMillis = breakTimeInMillis;
+
+            breakTimer = new CountDownTimer(currentTimeInMillis, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    currentTimeInMillis = millisUntilFinished;
+                    updateTimerText();
+                    updateProgressBar(breakTimeInMillis, currentTimeInMillis);
+                }
+
+                @Override
+                public void onFinish() {
+                    resetTimer();
+                }
+            };
+
+            breakTimer.start();
+            isBreakTimerRunning = true;
+            isPaused = false;
+            startPauseButton.setText("Pause");
+            resetButton.setEnabled(false);
+            statusTextView.setText("Break Time");
+        }
+    }
+
+    private void pauseTimer() {
+        if (isWorkTimerRunning) {
+            workTimer.cancel();
+        } else if (isBreakTimerRunning) {
+            breakTimer.cancel();
+        }
+        isPaused = true;
+        startPauseButton.setText("Resume");
+        resetButton.setEnabled(true);
+        savedTimeInMillis = currentTimeInMillis;
+    }
+
+    private void resumeTimer() {
+        if (isWorkTimerRunning) {
+            workTimer = new CountDownTimer(savedTimeInMillis, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    currentTimeInMillis = millisUntilFinished;
+                    updateTimerText();
+                    updateProgressBar(workTimeInMillis, currentTimeInMillis);
+                }
+                @Override
+                public void onFinish() {
+                    startBreakTimer();
+                }
+            };
+            workTimer.start();
+            isWorkTimerRunning = true;
+            isPaused = false;
+            startPauseButton.setText("Pause");
+            resetButton.setEnabled(false);
+            statusTextView.setText("Working");
+        } else if (isBreakTimerRunning) {
+            breakTimer = new CountDownTimer(savedTimeInMillis, 1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    currentTimeInMillis = millisUntilFinished;
+                    updateTimerText();
+                    updateProgressBar(breakTimeInMillis, currentTimeInMillis);
+                }
+                @Override
+                public void onFinish() {
+                    resetTimer();
+                }
+            };
+            breakTimer.start();
+            isBreakTimerRunning = true;
+            isPaused = false;
+            startPauseButton.setText("Pause");
+            resetButton.setEnabled(false);
+            statusTextView.setText("Break Time");
+        }
+    }
+
+
+    private void resetTimer() {
+        if (isWorkTimerRunning) {
+            workTimer.cancel();
+        } else if (isBreakTimerRunning) {
+            breakTimer.cancel();
+        }
+
+        isWorkTimerRunning = false;
+        isBreakTimerRunning = false;
+        isPaused = false;
+        startPauseButton.setText("Start");
+        resetButton.setEnabled(true);
+        statusTextView.setText("Ready");
+
+        workProgressBar.setMax(1);
+        workProgressBar.setProgress(0);
+
+        workTimeEditText.setEnabled(true); // 작업 시간과 휴식 시간 입력을 다시 활성화
+        breakTimeEditText.setEnabled(true);
+
+        workTimeEditText.setText("");
+        breakTimeEditText.setText("");
+        timerTextView.setText("00:00");
+        workTimeInMillis = 0;
+        breakTimeInMillis = 0;
+    }
+
+    private void updateTimerText() {
+        int minutes = (int) (currentTimeInMillis / 1000) / 60;
+        int seconds = (int) (currentTimeInMillis / 1000) % 60;
+        timerTextView.setText(String.format("%02d:%02d", minutes, seconds));
+    }
+    private void updateProgressBar(long totalMillis, long remainingMillis) {
+        int progress = (int) ((totalMillis - remainingMillis) * 100 / totalMillis);
+        workProgressBar.setProgress(progress);
     }
 }
