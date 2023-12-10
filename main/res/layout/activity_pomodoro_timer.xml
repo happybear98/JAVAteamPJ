@@ -17,6 +17,16 @@
         app:layout_constraintStart_toStartOf="@+id/linearLayout"
         app:layout_constraintTop_toTopOf="@+id/linearLayout">
 
+        <android.widget.Button
+            android:id="@+id/weeklySta"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            android:text="통계"
+            android:textColor="#F3AA51"
+            android:textStyle="bold"
+            android:background="@drawable/weeky_stat" />
+
         <ProgressBar
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="370dp"
@@ -126,6 +136,5 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-
-</LinearLayout>
+    </LinearLayout>
 
